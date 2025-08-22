@@ -25,3 +25,4 @@ pandas
 langchain
 sqlalchemy
 python-dotenv
+langchain-groq
