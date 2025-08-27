@@ -3,7 +3,7 @@ import psycopg2
 # Connection helper function
 def get_connection():
     return psycopg2.connect(
-        host="localhost",
+        host="ep-red-firefly-123456.us-east-2.aws.neon.tech",
         user="postgres",       # 🔁 replace with your PostgreSQL username
         password="Yash_4903@",  # 🔁 replace with your PostgreSQL password
         database="account"     # 🔁 replace with your DB name
