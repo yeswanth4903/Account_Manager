@@ -10,14 +10,13 @@ def get_connection():
     )
 
 
-def user_exists(user_id):
+def user_exists(username):
     print("Existence tool called")
-    user_id = int(user_id)
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = "SELECT * FROM acc WHERE user_id = %s"
-    cursor.execute(query, (user_id,))
+    query = "SELECT * FROM acc WHERE user_name = %s"
+    cursor.execute(query, (username,))
     result = cursor.fetchone()
 
     cursor.close()
@@ -26,15 +25,13 @@ def user_exists(user_id):
     return bool(result)
 
 
-def authenticate_user(user_id, password):
+def authenticate_user(username, password):
     print("Authenticater called")
-    user_id = int(user_id)
-
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = "SELECT * FROM acc WHERE user_id = %s AND password = %s"
-    cursor.execute(query, (user_id, password))
+    query = "SELECT * FROM acc WHERE user_name = %s AND password = %s"
+    cursor.execute(query, (username, password))
     result = cursor.fetchone()
 
     cursor.close()
@@ -46,14 +43,13 @@ def authenticate_user(user_id, password):
         return "The credentials are not valid..."
 
 
-def get_balance(user_id):
+def get_balance(username):
     print("Balance checker called")
-    user_id = int(user_id)
     conn = get_connection()
     cursor = conn.cursor()
 
-    query = "SELECT balance FROM acc WHERE user_id = %s"
-    cursor.execute(query, (user_id,))
+    query = "SELECT balance FROM acc WHERE user_name = %s"
+    cursor.execute(query, (username,))
     result = cursor.fetchone()
 
     cursor.close()
@@ -65,18 +61,16 @@ def get_balance(user_id):
         return "User not found"
 
 
-def transfer_money(from_user, to_user, amount):
-    from_user = int(from_user)
-    to_user = int(to_user)
+def transfer_money(from_username, to_username, amount):
     amount = int(amount)
 
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT balance FROM acc WHERE user_id = %s", (from_user,))
+    cursor.execute("SELECT balance FROM acc WHERE user_name = %s", (from_username,))
     from_result = cursor.fetchone()
 
-    cursor.execute("SELECT balance FROM acc WHERE user_id = %s", (to_user,))
+    cursor.execute("SELECT balance FROM acc WHERE user_name = %s", (to_username,))
     to_result = cursor.fetchone()
 
     if from_result and to_result:
@@ -84,9 +78,9 @@ def transfer_money(from_user, to_user, amount):
 
         if from_balance >= amount:
             # Deduct from sender
-            cursor.execute("UPDATE acc SET balance = balance - %s WHERE user_id = %s", (amount, from_user))
+            cursor.execute("UPDATE acc SET balance = balance - %s WHERE user_name = %s", (amount, from_username))
             # Add to receiver
-            cursor.execute("UPDATE acc SET balance = balance + %s WHERE user_id = %s", (amount, to_user))
+            cursor.execute("UPDATE acc SET balance = balance + %s WHERE user_name = %s", (amount, to_username))
 
             conn.commit()
             cursor.close()
@@ -102,12 +96,19 @@ def transfer_money(from_user, to_user, amount):
         return "One or both users not found"
 
 
-def create_account(user_name):
+def create_account(user_name, password):
     conn = get_connection()
     cursor = conn.cursor()
+    
+    # Check if username already exists
+    cursor.execute("SELECT user_id FROM acc WHERE user_name = %s", (user_name,))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        return "Error: Username already exists. Please choose a different username"
 
-    insert_query = "INSERT INTO acc (user_name, balance) VALUES (%s, %s) RETURNING user_id"
-    cursor.execute(insert_query, (user_name, 0))
+    insert_query = "INSERT INTO acc (user_name, password) VALUES (%s, %s) RETURNING user_id"
+    cursor.execute(insert_query, (user_name, password))
     
     account_number = cursor.fetchone()[0]
     conn.commit()
@@ -115,7 +116,7 @@ def create_account(user_name):
     cursor.close()
     conn.close()
 
-    return f"Account created successfully. Account number is {account_number}"
+    return f"Account created successfully. Account number is {account_number}. Initial balance is set to 500."
 
 
 def delete_account(account_number):
